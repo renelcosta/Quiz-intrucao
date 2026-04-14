@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telão - Ranking Gamificado</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #121212; 
+            color: #ffffff; 
+            text-align: center; 
+            margin: 0; 
+            padding: 50px; 
+        }
+        h1 { font-size: 3em; color: #4da6ff; margin-bottom: 10px; }
+        h2 { color: #aaaaaa; font-weight: normal; margin-bottom: 40px; }
+        
+        .container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            margin-top: 50px;
+            height: 300px;
+        }
+
+        .podio {
+            width: 25%;
+            background-color: #1e1e1e;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 20px;
+            box-shadow: 0px -5px 15px rgba(0,0,0,0.5);
+            transition: all 0.5s ease;
+        }
+
+        .lugar-1 { height: 100%; background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%); color: #000;}
+        .lugar-2 { height: 75%; background: linear-gradient(180deg, #c0c0c0 0%, #808080 100%); color: #000;}
+        .lugar-3 { height: 60%; background: linear-gradient(180deg, #cd7f32 0%, #8b4513 100%); color: #fff;}
+
+        .nome { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; }
+        .pontos { font-size: 1.2em; }
+        
+        .qr-container {
+            margin-bottom: 40px;
+            background: #ffffff;
+            display: inline-block;
+            padding: 15px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Instrução Gamificada</h1>
+    <h2>Escaneie o QR Code para entrar na sala</h2>
+
+    <div class="qr-container">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=LINK_DO_SEU_APP_AQUI" alt="QR Code de Acesso">
+    </div>
+
+    <div class="container" id="areaPodio" style="display: none;">
+        <div class="podio lugar-2" id="podio2">
+            <div class="nome" id="nome2">-</div>
+            <div class="pontos" id="pontos2">0 pts</div>
+        </div>
+        <div class="podio lugar-1" id="podio1">
+            <div class="nome" id="nome1">-</div>
+            <div class="pontos" id="pontos1">0 pts</div>
+        </div>
+        <div class="podio lugar-3" id="podio3">
+            <div class="nome" id="nome3">-</div>
+            <div class="pontos" id="pontos3">0 pts</div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCRW021XFi3QwiwbB3T7xCshF6-x2TjWx8",
+            authDomain: "teste-00-1b0d8.firebaseapp.com",
+            databaseURL: "https://teste-00-1b0d8-default-rtdb.firebaseio.com",
+            projectId: "teste-00-1b0d8",
+            storageBucket: "teste-00-1b0d8.firebasestorage.app",
+            messagingSenderId: "747816716099",
+            appId: "1:747816716099:web:80f4650036f9afdf6551f6",
+            measurementId: "G-1DK9K683QP"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Escuta o banco de dados e atualiza o ranking em tempo real
+        db.ref('sala_de_aula/alunos').on('value', (snapshot) => {
+            const dados = snapshot.val();
+            if (!dados) return;
+
+            document.querySelector('.qr-container').style.display = 'none'; // Esconde o QR code
+            document.getElementById('areaPodio').style.display = 'flex'; // Mostra o pódio
+
+            // Transforma o objeto do Firebase em um Array para podermos ordenar
+            let listaAlunos = [];
+            for (let id in dados) {
+                listaAlunos.push(dados[id]);
+            }
+
+            // Ordena os alunos pela pontuação (do maior para o menor)
+            listaAlunos.sort((a, b) => b.pontuacao_total - a.pontuacao_total);
+
+            // Preenche o 1º Lugar
+            if(listaAlunos[0]) {
+                document.getElementById('nome1').innerText = listaAlunos[0].nome;
+                document.getElementById('pontos1').innerText = listaAlunos[0].pontuacao_total + " pts";
+            }
+            // Preenche o 2º Lugar
+            if(listaAlunos[1]) {
+                document.getElementById('nome2').innerText = listaAlunos[1].nome;
+                document.getElementById('pontos2').innerText = listaAlunos[1].pontuacao_total + " pts";
+            }
+            // Preenche o 3º Lugar
+            if(listaAlunos[2]) {
+                document.getElementById('nome3').innerText = listaAlunos[2].nome;
+                document.getElementById('pontos3').innerText = listaAlunos[2].pontuacao_total + " pts";
+            }
+        });
+    </script>
+</body>
+</html>

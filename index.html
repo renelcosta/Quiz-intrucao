@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; background-color: #f4f4f9; padding: 15px;}
+        .escondido { display: none; }
+        input { padding: 10px; font-size: 16px; width: 100%; max-width: 300px; margin-bottom: 20px; }
+        button { padding: 12px; font-size: 16px; margin: 5px; width: 100%; max-width: 300px; background-color: #004080; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        .alternativa:active { background-color: #00264d; }
+        #tempoRestante { font-size: 24px; font-weight: bold; color: #b30000; margin: 15px 0;}
+    </style>
+</head>
+<body>
+
+    <div id="telaLogin">
+        <h2>Identificação</h2>
+        <input type="text" id="nomeGuerra" placeholder="Ex: Tenente Silva">
+        <br>
+        <button onclick="entrarNaSala()">Entrar</button>
+    </div>
+
+    <div id="telaQuestao" class="escondido">
+        <h3 id="textoPergunta">Qual é o apelido do T-25 Universal na FAB?</h3>
+        <div id="tempoRestante">15</div>
+        
+        <button class="alternativa" onclick="enviarResposta('C-95M')">A) C-95M</button><br>
+        <button class="alternativa" onclick="enviarResposta('Tango')">B) Tango</button><br>
+        <button class="alternativa" onclick="enviarResposta('Guri')">C) Guri</button><br>
+        <button class="alternativa" onclick="enviarResposta('Xavante')">D) Xavante</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCRW021XFi3QwiwbB3T7xCshF6-x2TjWx8",
+            authDomain: "teste-00-1b0d8.firebaseapp.com",
+            databaseURL: "https://teste-00-1b0d8-default-rtdb.firebaseio.com",
+            projectId: "teste-00-1b0d8",
+            storageBucket: "teste-00-1b0d8.firebasestorage.app",
+            messagingSenderId: "747816716099",
+            appId: "1:747816716099:web:80f4650036f9afdf6551f6",
+            measurementId: "G-1DK9K683QP"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        
+        let nomeAluno = "";
+        let inicioQuestao = 0;
+        let intervaloCronometro;
+
+        function entrarNaSala() {
+            nomeAluno = document.getElementById("nomeGuerra").value;
+            if(nomeAluno.trim() === "") return alert("Insira um nome!");
+
+            db.ref('sala_de_aula/alunos/' + nomeAluno).set({
+                nome: nomeAluno, pontuacao_total: 0
+            }).then(() => {
+                document.getElementById("telaLogin").innerHTML = "<h3>Aguardando o instrutor iniciar...</h3>";
+                escutarInstrutor();
+            });
+        }
+
+        // Fica ouvindo o comando do instrutor
+        function escutarInstrutor() {
+            db.ref('sala_de_aula/estado').on('value', (snapshot) => {
+                const estado = snapshot.val();
+                if (estado && estado.fase === 'questao_1') {
+                    mostrarQuestao(estado.tempo_limite);
+                }
+            });
+        }
+
+        function mostrarQuestao(tempoLimite) {
+            document.getElementById("telaLogin").classList.add("escondido");
+            document.getElementById("telaQuestao").classList.remove("escondido");
+            
+            inicioQuestao = Date.now(); // Marca o exato milissegundo que a questão abriu
+            let tempoAtual = tempoLimite;
+            document.getElementById("tempoRestante").innerText = tempoAtual;
+
+            // Cronômetro na tela
+            intervaloCronometro = setInterval(() => {
+                tempoAtual--;
+                document.getElementById("tempoRestante").innerText = tempoAtual;
+                if(tempoAtual <= 0) {
+                    clearInterval(intervaloCronometro);
+                    enviarResposta("Tempo Esgotado"); // Força erro se o tempo acabar
+                }
+            }, 1000);
+        }
+
+        function enviarResposta(resposta) {
+            clearInterval(intervaloCronometro);
+            document.getElementById("telaQuestao").innerHTML = "<h3>Resposta registrada! Aguarde o ranking...</h3>";
+
+            let tempoDeRespostaMs = Date.now() - inicioQuestao;
+            let tempoDeRespostaSeg = tempoDeRespostaMs / 1000;
+            let pontosObtidos = 0;
+
+            // Lógica de pontuação: Questão vale 1000. Perde 50 pontos por segundo de demora.
+            if (resposta === 'Tango') {
+                pontosObtidos = Math.round(1000 - (tempoDeRespostaSeg * 50));
+                if (pontosObtidos < 100) pontosObtidos = 100; // Pontuação mínima para quem acertar
+            }
+
+            // Atualiza a pontuação do aluno no banco de dados
+            db.ref('sala_de_aula/alunos/' + nomeAluno).update({
+                pontuacao_total: pontosObtidos
+            });
+        }
+    </script>
+</body>
+</html>

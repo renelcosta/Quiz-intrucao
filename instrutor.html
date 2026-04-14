@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Instrutor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #eef2f3; }
+        .painel { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #000; color: #fff; margin: 5px 0; padding: 10px; border-radius: 4px; font-weight: bold; }
+        .btn-acao { padding: 10px 20px; font-size: 16px; background-color: #b30000; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px;}
+        .btn-acao:hover { background-color: #800000; }
+    </style>
+</head>
+<body>
+
+    <div class="painel">
+        <h2>Painel de Controle - Instrutor</h2>
+        <button class="btn-acao" onclick="lancarQuestao()">Lançar Questão 1</button>
+        
+        <h3>Alunos na Sala:</h3>
+        <ul id="listaAlunos">
+            <li style="background: #ccc; color: #333;">Aguardando conexões...</li>
+        </ul>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCRW021XFi3QwiwbB3T7xCshF6-x2TjWx8",
+            authDomain: "teste-00-1b0d8.firebaseapp.com",
+            databaseURL: "https://teste-00-1b0d8-default-rtdb.firebaseio.com",
+            projectId: "teste-00-1b0d8",
+            storageBucket: "teste-00-1b0d8.firebasestorage.app",
+            messagingSenderId: "747816716099",
+            appId: "1:747816716099:web:80f4650036f9afdf6551f6",
+            measurementId: "G-1DK9K683QP"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const listaAlunosHTML = document.getElementById("listaAlunos");
+
+        // Monitora os alunos conectados
+        db.ref('sala_de_aula/alunos').on('value', (snapshot) => {
+            listaAlunosHTML.innerHTML = ""; 
+            const alunos = snapshot.val();
+            if (alunos) {
+                for (let idAluno in alunos) {
+                    let li = document.createElement("li");
+                    li.textContent = `${alunos[idAluno].nome} - Pontos: ${alunos[idAluno].pontuacao_total}`;
+                    listaAlunosHTML.appendChild(li);
+                }
+            }
+        });
+
+        // Função para iniciar a questão para todos
+        function lancarQuestao() {
+            db.ref('sala_de_aula/estado').set({
+                fase: 'questao_1',
+                tempo_limite: 15 // 15 segundos para responder
+            });
+        }
+    </script>
+</body>
+</html>
